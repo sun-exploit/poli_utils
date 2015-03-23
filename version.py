@@ -22,7 +22,10 @@
 #
 #   This file is part of crcnetd - CRCnet Configuration System Daemon
 #
-#   Placeholder so the directory is treated as a package.
+#   This file contains common code used throughout the system and extensions
+#   - Constant values
+#   - Small helper functions
+#   - Base classes
 #
 #   Author:       Matt Brown <matt@crc.net.nz>
 #   Version:      $Id$
@@ -39,3 +42,5 @@
 #   You should have received a copy of the GNU General Public License along with
 #   crcnetd; if not, write to the Free Software Foundation, Inc.,
 #   51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+pcsd_version="1.2dev"
+pcsd_revision="HEAD"

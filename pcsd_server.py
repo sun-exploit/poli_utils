@@ -22,10 +22,8 @@
 #
 #   This file is part of crcnetd - CRCnet Configuration System Daemon
 #
-#   This file contains common code used throughout the system and extensions
-#   - Constant values
-#   - Small helper functions
-#   - Base classes
+#   Web and RPC Server - Provides the server that forms the primary interface
+#   to the CRCnet Configuration System Daemon.
 #
 #   Author:       Matt Brown <matt@crc.net.nz>
 #   Version:      $Id$
@@ -52,22 +50,27 @@ import hotshot
 import time
 import threading
 import thread
-from twisted.web import xmlrpc, server, resource
+
+from twisted.web      import xmlrpc, server, resource
 from twisted.internet import reactor, defer, threads
-from twisted.python import context, threadable, threadpool, log as twisted_log
+from twisted.python   import context, threadable, threadpool, log as twisted_log
+
 from OpenSSL import SSL
 
 from pcsd_common import *
-from pcsd_log import *
+from pcsd_log    import *
 from pcsd_daemon import shutdownHandler
 from pcsd_config import config_get, config_getboolean, config_getint
 from pcsd_events import registerEvent, triggerEvent
 
-class pcs_server_error(pcsd_error):
+class pcsd_server_error(pcsd_error):
     pass
 
 _http_root = None
 _https_root = None
+
+pcs_utils_type = PCSD_CORE
+
 #####################################################################
 # Webserver Initialisation
 #####################################################################
@@ -209,12 +212,12 @@ def _registerResource(root, desc, path, res_class, **kwargs):
 
     # Path should not start with /
     if path.startswith("/"):
-        raise pcs_server_error("Path must not begin with /!")
+        raise pcsd_server_error("Path must not begin with /!")
 
     # Check if the path is already registerd
     paths = root.listNames()
     if path in paths:
-        raise pcs_server_error("Path already registered!")
+        raise pcsd_server_error("Path already registered!")
 
     # Create an instance of the class
     inst = res_class(**kwargs)
@@ -360,8 +363,8 @@ def startPCSDServer(key, cert, cacert):
         # SSL Context
         class SCF:
             def __init__(self, key, cert, cacert):
-                self.mKey = key
-                self.mCert = cert
+                self.mKey    = key
+                self.mCert   = cert
                 self.mCACert = cacert
 
             def verify(self, conn, cert, errnum, depth, ok):
@@ -502,6 +505,9 @@ class pcsd_xmlrpc(xmlrpc.XMLRPC):
         called on each function that has been tagged.
         """
 
+        log_debug("%s::exportViaXMLRPC(%s, %s, %s, %s, %s, %s)" % \
+                  (__name__, mode, group, classmethod, name, \
+            clientAddress, asynchronous) )
         # Create a new dictionary to hold function information
         efunc = {}
         efunc["mode"] = mode
@@ -519,7 +525,7 @@ class pcsd_xmlrpc(xmlrpc.XMLRPC):
             func.xmlrpcName = efunc["name"]
             # Check it's not already registered
             if efunc["name"] in pcsd_xmlrpc._functions.keys():
-                raise pcs_server_error("Duplicate XMLRPC function registered!")
+                raise pcsd_server_error("Duplicate XMLRPC function registered!")
             # Class method functions aren't registed just yet, tag it
             if classmethod:
                 efunc["function"] = None
@@ -528,8 +534,8 @@ class pcsd_xmlrpc(xmlrpc.XMLRPC):
                 efunc["function"] = func
             # Store it
             pcsd_xmlrpc._functions[efunc["name"]] = efunc
-            #log_debug("Exported %s via XMLRPC (%s)" % \
-            #        (efunc["name"], efunc["classmethod"]))
+            log_debug("%s::%s exported via XMLRPC (%s)" % \
+                    (func.__module__, efunc["name"], efunc["classmethod"]))
             # Return it
             return func
 
@@ -551,9 +557,9 @@ class pcsd_xmlrpc(xmlrpc.XMLRPC):
 
         # Check it has been registered
         if name not in pcsd_xmlrpc._functions.keys():
-            raise pcs_server_error("Cannot update unregistered method!")
+            raise pcsd_server_error("Cannot update unregistered method!")
         if pcsd_xmlrpc._functions[name]["function"] is not None:
-            raise pcs_server_error("Class method already registered!")
+            raise pcsd_server_error("Class method already registered!")
 
         # Store the new function
         pcsd_xmlrpc._functions[name]["function"] = func
@@ -599,9 +605,9 @@ class pcsd_xmlrpc(xmlrpc.XMLRPC):
             if len(reactor.threadpool.threads) >= self.max_threads:
                 if len(reactor.threadpool.waiters) < 2:
                     if not func["asynchronous"]:
-                        raise pcs_server_error("No free threads")
+                        raise pcsd_server_error("No free threads")
                 elif len(reactor.threadpool.waiters) < 1:
-                    raise pcs_server_error("No free threads")
+                    raise pcsd_server_error("No free threads")
 
             # Handle special case function without session call
             if func["mode"] == SESSION_NONE:
@@ -630,7 +636,7 @@ class pcsd_xmlrpc(xmlrpc.XMLRPC):
             if needsauth:
                 auth = self._doCertificateLogon(request)
                 if auth is None:
-                    raise pcs_server_error("Insufficient authentication " \
+                    raise pcsd_server_error("Insufficient authentication " \
                             "information supplied!")
                 log_info("Accepted SSL connection from %s" % auth["login_id"])
             else:
@@ -647,14 +653,14 @@ class pcsd_xmlrpc(xmlrpc.XMLRPC):
             session = getSessionE(auth["session_id"])
             perm = session.hasPerms(func["mode"], func["group"])
             if perm == SESSION_NONE:
-                raise pcs_server_error("Insufficient privileges for %s" % \
+                raise pcsd_server_error("Insufficient privileges for %s" % \
                         functionPath)
 
             # All OK so far
             request.setHeader("content-type", "text/xml")
             reactor.callInThread(self._executeFunction, request, func, auth, \
                     *args)
-        except pcs_server_error:
+        except pcsd_server_error:
             (type, value, tb) = sys.exc_info()
             log_error("Call to %s failed! - %s" % (functionPath, value), \
                     (type, value, tb))

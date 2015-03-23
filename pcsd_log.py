@@ -22,10 +22,8 @@
 #
 #   This file is part of crcnetd - CRCnet Configuration System Daemon
 #
-#   This file contains common code used throughout the system and extensions
-#   - Constant values
-#   - Small helper functions
-#   - Base classes
+#   Provides error and information logging routines to the rest of the
+#   application.
 #
 #   Author:       Matt Brown <matt@crc.net.nz>
 #   Version:      $Id$
@@ -49,6 +47,10 @@ import signal
 import syslog
 import traceback
 import time
+
+from pcsd_common import *
+
+pcs_utils_type = PCSD_CORE
 
 _isDaemon = 0
 _verbose = 0

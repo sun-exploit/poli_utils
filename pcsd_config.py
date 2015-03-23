@@ -22,10 +22,8 @@
 #
 #   This file is part of crcnetd - CRCnet Configuration System Daemon
 #
-#   This file contains common code used throughout the system and extensions
-#   - Constant values
-#   - Small helper functions
-#   - Base classes
+#   Configuration File Handling - Provides a unified interface to the
+#   configuration files used to control operation of the system
 #
 #   Author:       Matt Brown <matt@crc.net.nz>
 #   Version:      $Id$
@@ -48,9 +46,9 @@ import ConfigParser
 import getopt
 import traceback
 from pcsd_common import *
-from pcsd_log import *
+from pcsd_log    import *
 
-class pcs_config_error(pcsd_error):
+class pcsd_config_error(pcsd_error):
     pass
 
 _config = None
@@ -75,8 +73,8 @@ def config_init():
            not os.path.isfile(DEFAULT_CONFFILE):
             raise
 
-        print "D: pcsd_config::config_init : DEFAULT_CONFFILE=[%s], conffile=[%s]" \
-            % (DEFAULT_CONFFILE, conffile)
+        log_debug("%s : DEFAULT_CONFFILE=[%s], conffile=[%s]" \
+            % (__name__, DEFAULT_CONFFILE, conffile))
 
         _config.read([DEFAULT_CONFFILE, conffile])
 
@@ -84,16 +82,16 @@ def config_init():
         (type, value, tb) = sys.exc_info()
         try:
             # pcsd_log may not have been initialised yet...
-            log_fatal("Could not read configuration file!", sys.exc_info())
+            log_fatal("%s::config_init() : Could not read conffile=[%s]!" % (__name__, conffile), sys.exc_info())
         except:
-            print "Could not read configuration file!"
+            print "Could not read ed conffile=[%s]" % conffile
             for line in traceback.format_exception(type, value, tb):
                 print line.strip()
             sys.exit(1)
 
 def config_get(section, option, default=None, raw=0, vars=None, obj=None):
     """Get a value from the configuration, with a default."""
-    print "%s::%s : section=[%s], option=[%s]" % (__name__, 'config_get', section, option)
+    log_debug("%s::config_get : section=[%s], option=[%s]" % (__name__, section, option))
     global _config
     if obj is None: obj=_config
     if obj is None: return default
@@ -102,7 +100,7 @@ def config_get(section, option, default=None, raw=0, vars=None, obj=None):
     if obj.has_option(section, option):
         return obj.get(section, option, raw=raw, vars=None)
     else:
-        print "%s::%s : no option for %s" % (__name__, 'config_get', section)
+        log_debug("%s::config_get : no option for %s" % (__name__, section))
         return default
 def config_getint(section, option, default=None, obj=None):
     """Get an integer value from the configuration, with a default."""
@@ -127,7 +125,7 @@ def config_getboolean(section, option, default=None, obj=None):
     else:
         return default
 def config_get_required(section, option, raw=0, vars=None, obj=None):
-    print "%s::%s : section=[%s], option=[%s]" % (__name__, 'config_get_required', section, option)
+    log_debug("%s::config_get_required : section=[%s], option=[%s]" % (__name__, section, option))
     global _config
     if obj is None: obj=_config
     if obj is None: return default
@@ -136,7 +134,7 @@ def config_get_required(section, option, raw=0, vars=None, obj=None):
     if obj.has_option(section,option):
         return obj.get(section, option, raw=raw, vars=None)
     else:
-        raise pcs_config_error("Configuration file is missing required " \
+        raise pcsd_config_error("Configuration file is missing required " \
                 "value '%s' from section '%s'" % (option , section))
 
 def init_pref_store(preffile):

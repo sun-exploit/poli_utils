@@ -22,10 +22,8 @@
 #
 #   This file is part of crcnetd - CRCnet Configuration System Daemon
 #
-#   This file contains common code used throughout the system and extensions
-#   - Constant values
-#   - Small helper functions
-#   - Base classes
+#   Provides a generic interface to allow functions to register events and
+#   callback functions to be executed whenever the event occurs.
 #
 #   Author:       Matt Brown <matt@crc.net.nz>
 #   Version:      $Id$
@@ -45,6 +43,8 @@
 from pcsd_common import *
 from pcsd_log import *
 from pcsd_config import config_get
+
+pcs_utils_type = PCSD_CORE
 
 class pcs_event_error(pcsd_error):
     pass
@@ -72,7 +72,7 @@ def registerEvent(eventName):
     event["eventHostId"] = -1
     event["eventCallbacks"] = {}
     _events[eventName] = event
-    log_debug("Registered event: %s" % eventName)
+    log_debug("%s::registerEvent(%s)" % (__name__, eventName))
 
     # Continue on, noop decorator
     return lambda f:f
@@ -133,7 +133,7 @@ def catchEvent(eventName, cbFunc=None):
     # The real decorator function we will return
     def decorator(func):
         _events[eventName]["eventCallbacks"][func.func_name] = func
-        log_debug("Added callback on %s to %s" % (eventName, func.func_name))
+        log_debug("%s::catchEvent : callback=[%s] added to function=[%s::%s]" % (__name__, eventName, func.__module__, func.func_name))
         return func
 
     return decorator

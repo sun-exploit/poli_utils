@@ -22,10 +22,8 @@
 #
 #   This file is part of crcnetd - CRCnet Configuration System Daemon
 #
-#   This file contains common code used throughout the system and extensions
-#   - Constant values
-#   - Small helper functions
-#   - Base classes
+#   Provides a generic interface to allow functions to register events and
+#   callback functions to be executed whenever the event occurs.
 #
 #   Author:       Matt Brown <matt@crc.net.nz>
 #   Version:      $Id$

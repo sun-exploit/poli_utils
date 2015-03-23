@@ -20,12 +20,9 @@
 #
 #   Copyright (C) 2006  The University of Waikato
 #
-#   This file is part of crcnetd - CRCnet Configuration System Daemon
+#   This file is part of the CRCnet Configuration System
 #
-#   This file contains common code used throughout the system and extensions
-#   - Constant values
-#   - Small helper functions
-#   - Base classes
+#   Helper functions for creating servers
 #
 #   Author:       Matt Brown <matt@crc.net.nz>
 #   Version:      $Id$
@@ -51,6 +48,8 @@ from pcsd_common import *
 from pcsd_log import *
 from pcsd_config import config_get, config_init
 from pcsd_events import registerEvent, triggerEvent
+
+pcs_utils_type = PCSD_CORE
 
 #####################################################################
 # Server / Daemonisation Helper Functions
@@ -234,6 +233,7 @@ def loadModules(opmode):
         if idx == -1:
             log_fatal("Module '%s' has no pcs_mod_type property!" % module)
         try:
+            log_debug("%s::loadModules module =%s\n" % (__name__, mfile))
             code = compile(data[idx:data.find("\n",idx)], "%s.py" % mname, \
                     'single')
             eval(code)

@@ -170,6 +170,10 @@ PCSD_NONE = -1
 PCSD_CLIENT = 0
 PCSD_SERVER = 1
 
+# Utils types
+PCSD_CORE = 0
+PCSD_EXT = 1
+
 # From net/route.h
 RTF_UP = 0x0001             #U Route usable
 RTF_GATEWAY = 0x0002        #G Destination is a gateway.
@@ -220,6 +224,8 @@ SIOCGIFNETMASK = 0x891b
 # that is used to start the daemon
 ALLOWED_ENV_VARS = [ "TERM", "SHELL", "SHLVL", "PWD", "PATH", "USER", "MAIL", \
         "HOME", "_"]
+
+pcs_utils_type = PCSD_CORE
 
 #############################################################################
 # Base Classes
